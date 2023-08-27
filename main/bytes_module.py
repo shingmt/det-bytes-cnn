@@ -42,7 +42,7 @@ class BytesModule:
         if 'model_path' in config and config['model_path'] != self._model_path:
             self._model_path = config['model_path']
 
-            if not os.path.isfile(self._model_path): #? model_path not exist
+            if os.path.isfile(self._model_path): #? model_path not exist
                 self._model = load_model(self._model_path)
             else: #? model_path not exist
                 log('[!][BytesModule][change_config] `model_path` not exist', 'warning')
@@ -58,13 +58,22 @@ class BytesModule:
 
     def from_files(self, _map_ohash_inputs, callback):
         seq_datas = []
-        for ohash,filepath in _map_ohash_inputs:
+        for ohash,filepaths in _map_ohash_inputs.items():
+            #? filepaths is an array of 2 paths: 
+            # [
+            #   '/home/mta-smad/smad-3/data/modules/prp-bin2img/output/img/64/admin__2023-08-27_16-15-31__Lab_02-2.exe_RGB.png', 
+            #   '/home/mta-smad/smad-3/data/modules/prp-bin2img/output/img/64/admin__2023-08-27_16-15-31__Lab_02-2.exe.txt'
+            # ]
+            filepath = filepaths[1]
+            if len(filepath) == 0 or not os.path.isfile(filepath):
+                log(f'[!][BytesModule][from_files] filepath = {filepath} not exist')
+                return
             content = open(filepath, 'r').read().strip()
             seq_datas.append(content)
 
 
         if self._model is None:
-            log('[!][BytesModule][change_config] `model` not found', 'error')
+            log('[!][BytesModule][from_files] `model` not found', 'error')
             #? return empty result for each item
             result = {ohash: '' for ohash in _map_ohash_inputs.keys()}
             callback(result)
